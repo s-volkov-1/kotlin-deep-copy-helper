@@ -16,6 +16,7 @@
 
 package ru.slix.kotlin_deep_copy_helper
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -23,7 +24,6 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.readValue
 import ru.slix.kotlin_deep_copy_helper.ArrayModificationMode.*
 
 /** Exposed so you can configure it */
@@ -51,6 +51,13 @@ inline fun <reified T : Any> T.deepCopy(
     propertyPath: String,
     newValue: Any?,
     arrayModificationMode: ArrayModificationMode = REPLACE
+): T = deepCopy(propertyPath, newValue, arrayModificationMode, object : TypeReference<T>() {})
+
+fun <T : Any> T.deepCopy(
+    propertyPath: String,
+    newValue: Any?,
+    arrayModificationMode: ArrayModificationMode,
+    type: TypeReference<T>
 ): T {
     val pathTokensRaw: List<String> = propertyPath.split('/')
     require(!pathTokensRaw.contains("")) {
@@ -120,7 +127,7 @@ inline fun <reified T : Any> T.deepCopy(
     }
 
     val resultJson = mapper.writeValueAsString(sourceJsonNode)
-    return mapper.readValue<T>(resultJson)
+    return mapper.readValue(resultJson, type)
 }
 
 data class PathToken(
