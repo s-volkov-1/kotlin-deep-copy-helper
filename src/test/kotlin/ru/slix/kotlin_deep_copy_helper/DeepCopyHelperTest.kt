@@ -10,6 +10,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 internal class DeepCopyHelperTest {
 
@@ -203,6 +208,54 @@ internal class DeepCopyHelperTest {
     }
 
     @Nested
+    inner class ComplexFieldTypes {
+        @Test
+        fun `date-time fields preserve format`() {
+            val dtv = DateTimeValues(
+                id = "X",
+                localDateTime = LocalDateTime.parse("2021-04-09T10:11:12.123456"),
+                offsetDateTime = OffsetDateTime.parse("2021-04-09T10:11:12.123456+07:00"),
+                zonedDateTime = ZonedDateTime.parse("2021-04-09T10:11:12.123456+03:00[Europe/Moscow]"),
+                zoneOffset = ZoneOffset.ofHours(7)
+            )
+
+            val dtvCopy = dtv.deepCopy("id", "Y")
+
+            dtvCopy shouldBe dtv.copy(id = "Y")
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = [ "10", "10.1", "0.1", "0", "-10.1" ])
+        fun `big decimal preserves string format`(value: String) {
+            val bdv = BigDecimalValue("Y", BigDecimal(value))
+
+            val bdvCopy = bdv.deepCopy("id", "Y")
+
+            bdvCopy shouldBe bdv.copy(id = "Y")
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [ 10, 0, -10 ])
+        fun `big decimal preserves int format`(value: Int) {
+            val bdv = BigDecimalValue("Y", BigDecimal(value))
+
+            val bdvCopy = bdv.deepCopy("id", "Y")
+
+            bdvCopy shouldBe bdv.copy(id = "Y")
+        }
+
+        @ParameterizedTest
+        @ValueSource(doubles = [ 10.0, 10.1, 0.0, 0.1, -10.1 ])
+        fun `big decimal preserves double format`(value: Double) {
+            val bdv = BigDecimalValue("Y", BigDecimal(value))
+
+            val bdvCopy = bdv.deepCopy("id", "Y")
+
+            bdvCopy shouldBe bdv.copy(id = "Y")
+        }
+    }
+
+    @Nested
     inner class Errors {
         private val product = Product("pid", 20)
 
@@ -290,6 +343,19 @@ internal class DeepCopyHelperTest {
     private data class Product(
         val id: String,
         val price: Int
+    )
+
+    private data class BigDecimalValue(
+        val id: String,
+        val bigDecimal: BigDecimal,
+    )
+
+    private data class DateTimeValues(
+        val id: String,
+        val localDateTime: LocalDateTime,
+        val offsetDateTime: OffsetDateTime,
+        val zonedDateTime: ZonedDateTime,
+        val zoneOffset: ZoneOffset
     )
 
 }

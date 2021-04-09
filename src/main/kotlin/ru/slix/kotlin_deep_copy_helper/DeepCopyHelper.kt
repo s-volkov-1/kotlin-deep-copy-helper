@@ -16,9 +16,12 @@
 
 package ru.slix.kotlin_deep_copy_helper
 
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -28,6 +31,10 @@ import ru.slix.kotlin_deep_copy_helper.ArrayModificationMode.*
 
 /** Exposed so you can configure it */
 val mapper: ObjectMapper = ObjectMapper().findAndRegisterModules()
+    .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+    .configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE, false)
+    .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true)
+    .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
 
 /**
  * Enables easy copying object tree with deeply nested properties.
@@ -53,6 +60,9 @@ inline fun <reified T : Any> T.deepCopy(
     arrayModificationMode: ArrayModificationMode = REPLACE
 ): T = deepCopy(propertyPath, newValue, arrayModificationMode, object : TypeReference<T>() {})
 
+/**
+ * You are not supposed to use this directly, but it reduces amount of inlined code
+ */
 fun <T : Any> T.deepCopy(
     propertyPath: String,
     newValue: Any?,
